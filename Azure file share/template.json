@@ -1,0 +1,61 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "fileShare": {
+            "type": "string"
+        },
+        "storageName": {
+            "type": "string"
+        }
+    },
+    "functions": [],
+    "variables": {
+        "backupVault": "[concat(resourceGroup().name, '-BackupVault')]",
+        "backupPolicyStaAcc": "[concat(variables('backupVault'), '-PolicyStaAcc')]"                                        
+    },
+    "resources": [
+        {
+        "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
+        "apiVersion": "2021-08-01",
+        "name": "[concat(parameters('storageName'), '/default/', parameters('fileShare'))]",
+        "properties": {
+            "accessTier": "TransactionOptimized",
+            "shareQuota": 1024,
+            "enabledProtocols": "SMB"
+            }
+        },
+        {
+            "type": "Microsoft.RecoveryServices/vaults/backupPolicies",
+            "apiVersion": "2022-01-01",
+            "name": "[concat(variables('backupVault'), '/', variables('backupPolicyStaAcc'))]",
+            "properties": {
+                "backupManagementType": "AzureStorage",
+                "workloadType": "AzureFileShare",
+                "schedulePolicy": {
+                    "schedulePolicyType": "SimpleSchedulePolicy",
+                    "scheduleRunFrequency": "Daily",
+                    "scheduleRunTimes": [
+                        "2022-04-14T22:00:00Z"
+                    ],
+                    "scheduleWeeklyFrequency": "0"
+                },
+                "retentionPolicy": {
+                    "retentionPolicyType": "LongTermRetentionPolicy",
+                    "dailySchedule": {
+                        "retentionTimes": [
+                            "2022-04-14T22:00:00Z"
+                        ],
+                        "retentionDuration": {
+                            "count": 30,
+                            "durationType": "Days"
+                        }
+                    }
+                },
+                "timeZone": "UTC",
+                "protectedItemsCount": 0
+            }
+        }
+    ],
+    "outputs": {}
+}
